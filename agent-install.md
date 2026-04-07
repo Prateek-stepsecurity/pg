@@ -1,7 +1,4 @@
-<details>
-<summary>Using Packer to create a custom AMI for Persistent Runners (without auditd)</summary>
-
-## Using Packer to create a custom AMI for Persistent Runners (without auditd)
+# Using Packer to create a custom AMI for Persistent Runners (without auditd)
 
 ---
 
@@ -142,5 +139,3 @@ When creating a custom AMI, Packer will temporarily spin up a new AWS EC2 instan
 
 - **Security Group Configuration**: Ensure the AWS security group you use permits SSH access to the EC2 instance from the machine where the Packer command is executed. Replace the `{{VPC_ID}}`, `{{SUBNET_ID}}`, and `{{SECURITY_GROUP_ID}}` placeholders as per your chosen security group.
 - **Base AMI Selection**: Decide on a base AMI that aligns with your engineering policy. Replace `{{BASE_AMI}}` with the AMI ID of your choice.
-
-</details>
