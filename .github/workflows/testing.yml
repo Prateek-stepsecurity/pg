@@ -19,11 +19,12 @@ jobs:
           api.github.com:443
     - name: Egress proof
       run: |
-        if ! curl -sS -o /dev/null --max-time 8 https://api.github.com; then
+        if ! curl -sS -i --max-time 8 https://api.github.com; then
           exit 1
         fi
         for attempt in 1 2 3; do
-          if curl -sS -o /dev/null --max-time 8 https://example.com; then
+          echo "--- example.com attempt $attempt"
+          if curl -sS -i --max-time 8 https://example.com; then
             echo "off-allowlist host answered on attempt $attempt"
             exit 1
           fi
