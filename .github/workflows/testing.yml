@@ -1,12 +1,14 @@
-name: IP Block
-
+name: HardenRunner Issue 721 Repro
 on:
   workflow_dispatch:
 
 jobs:
-  ip-block:
-    if: always()
-    runs-on: ubuntu-latest
+  block:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
@@ -15,22 +17,20 @@ jobs:
           allowed-endpoints: >
             github.com:443
             api.github.com:443
-
-      - uses: actions/checkout@v3
-
-      - run: curl https://www.google.com
-      - name: "do 1.1.1.1:80"
-        if: always()  
-        run: curl --connect-timeout 5 -Iv "http://1.1.1.1:80" 
-      # - name: "do 1.1.1.1:443"
-      #   if: always()  
-      #   run: curl --connect-timeout 5 -Iv "http://1.1.1.1:443" 
-      - name: "do https://microsoft.com"
-        if: always()  
-        run: curl --connect-timeout 5 -Iv "https://microsoft.com" 
-      - name: "do 208.67.222.222:80"
-        if: always()  
-        run: curl --connect-timeout 5 -Iv "http://208.67.222.222:80" 
-      - name: "do 104.16.0.1:80"
-        if: always()  
-        run: curl --connect-timeout 5 -Iv "http://104.16.0.1:80" 
+      - name: Egress proof
+        run: |
+          curl -sS -o /dev/null --max-time 8 https://api.github.com || { echo "allowlisted host blocked"; exit 1; }
+          for attempt in 1 2 3; do
+            if curl -sS -o /dev/null --max-time 8 https://example.com; then
+              echo "REPRODUCED: example.com answered on attempt $attempt"
+              exit 1
+            fi
+          done
+          echo "NOT REPRODUCED: example.com blocked"
+      - name: Agent state
+        if: always()
+        run: |
+          ls -la /home/agent || true
+          cat /home/agent/agent.status || true
+          tail -n 200 /home/agent/agent.log || true
+          cat /etc/resolv.conf || true
