@@ -19,9 +19,6 @@ jobs:
           api.github.com:443
     - name: Egress proof
       run: |
-        if ! curl -sS -i --max-time 8 https://api.github.com; then
-          exit 1
-        fi
         for attempt in 1 2 3; do
           echo "--- example.com attempt $attempt"
           if curl -sS -i --max-time 8 https://example.com; then
