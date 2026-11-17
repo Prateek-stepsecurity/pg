@@ -10,27 +10,29 @@ jobs:
         os: [ubuntu-22.04, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
-        with:
-          egress-policy: block
-          disable-sudo: true
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-      - name: Egress proof
-        run: |
-          curl -sS -o /dev/null --max-time 8 https://api.github.com || { echo "allowlisted host blocked"; exit 1; }
-          for attempt in 1 2 3; do
-            if curl -sS -o /dev/null --max-time 8 https://example.com; then
-              echo "REPRODUCED: example.com answered on attempt $attempt"
-              exit 1
-            fi
-          done
-          echo "NOT REPRODUCED: example.com blocked"
-      - name: Agent state
-        if: always()
-        run: |
-          ls -la /home/agent || true
-          cat /home/agent/agent.status || true
-          tail -n 200 /home/agent/agent.log || true
-          cat /etc/resolv.conf || true
+    - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+      with:
+        egress-policy: block
+        disable-sudo: true
+        allowed-endpoints: >
+          github.com:443
+          api.github.com:443
+    - name: Egress proof
+      run: |
+        if ! curl -sS -o /dev/null --max-time 8 https://api.github.com; then
+          exit 1
+        fi
+        for attempt in 1 2 3; do
+          if curl -sS -o /dev/null --max-time 8 https://example.com; then
+            echo "off-allowlist host answered on attempt $attempt"
+            exit 1
+          fi
+        done
+    - name: Agent state
+      if: always()
+      run: |
+        ls -la /home/agent || true
+        cat /home/agent/agent.status || true
+        tail -n 200 /home/agent/agent.log || true
+        cat /etc/resolv.conf || true
+        resolvectl status || true
