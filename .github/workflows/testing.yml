@@ -10,7 +10,7 @@ jobs:
         os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: prateek-stepsecurity/harden-runner@int
+    - uses: prateek-stepsecurity/harden-runner@test-skip-meta-productionresultssa
       with:
         egress-policy: block
         disable-sudo: true
