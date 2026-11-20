@@ -26,6 +26,28 @@ jobs:
             exit 1
           fi
         done
+    - name: Raw IP egress proof
+      if: always()
+      run: |
+        leaked=0
+        for ip in 1.1.1.1 9.9.9.9; do
+          echo "--- https://$ip"
+          if curl -sS -i --max-time 8 "https://$ip"; then
+            echo "off-allowlist IP answered: $ip:443"
+            leaked=1
+          fi
+        done
+        echo "--- 8.8.8.8:53 udp"
+        if dig @8.8.8.8 example.com +time=3 +tries=1; then
+          echo "off-allowlist DNS answered: 8.8.8.8:53 udp"
+          leaked=1
+        fi
+        echo "--- 8.8.8.8:53 tcp"
+        if dig @8.8.8.8 example.com +tcp +time=3 +tries=1; then
+          echo "off-allowlist DNS answered: 8.8.8.8:53 tcp"
+          leaked=1
+        fi
+        exit $leaked
     - name: Agent state
       if: always()
       run: |
@@ -34,3 +56,4 @@ jobs:
         tail -n 200 /home/agent/agent.log || true
         cat /etc/resolv.conf || true
         resolvectl status || true
+        ip route show default || true
