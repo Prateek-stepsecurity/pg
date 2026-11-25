@@ -10,7 +10,7 @@ jobs:
         os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: prateek-stepsecurity/harden-runner@int
+    - uses: step-security/harden-runner@v2
       with:
         egress-policy: block
         disable-sudo: true
@@ -57,3 +57,5 @@ jobs:
         cat /etc/resolv.conf || true
         resolvectl status || true
         ip route show default || true
+    - run: cat /sys/devices/virtual/dmi/id/sys_vendor   # should print "Amazon EC2"
+    - run: cat /sys/devices/virtual/dmi/id/product_name # prints the instance type, e.g. m7i.xlarge
